@@ -1,5 +1,0 @@
-`define AXI_DATA_WIDTH  32
-`define AXI_ADDR_WIDTH  4
-`define AXI_STRB_WIDTH  (`AXI_DATA_WIDTH / 8)
-
-`define REGISTER_NUM    4
