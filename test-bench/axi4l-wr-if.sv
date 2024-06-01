@@ -95,7 +95,7 @@ interface axi4lite_wr_if #(
 
      fork : wait_for_aw_ready
        while (wr_cb.axi_awaddr_ready != 1) @wr_cb;
-       timeout(tm, "drive aw");
+       timeout(tm, "drive awaddr");
      join_any : wait_for_aw_ready
 
      disable wait_for_aw_ready;
@@ -216,7 +216,7 @@ interface wr_reg_file_if #(
       @wr_cb;
     endtask
 
-  endclass
+  endclass : axi4l_wr_monitor_bfm
 
   axi4l_wr_monitor_bfm mon_bfm = new();
 

@@ -1,7 +1,7 @@
 OUT      := out
 WORK     := work
 LOG      := compile.log
-TOP      := tb
+TOP      := wr_tb
 DUT      := dut
 WAVES    := 1
 SIM_OPTS := -gui
@@ -21,7 +21,7 @@ SRC_VERILOG=$(shell find . -name "*.v")
 SRC_LIB_SV=$(shell find $(TEST_LIB) -name "*.sv")
 SRC_SV=axi4l-test-pkg.sv \
        axi4l-wr-test.sv  \
-       axi4l-test-top.sv \
+       axi4l-test-wr-top.sv \
        axi4l-wr-if.sv
 
 $(OUT)/compile.stamp: $(SRC_SV) $(SRC_LIB_SV) $(SRC_VERILOG) $(OUT)

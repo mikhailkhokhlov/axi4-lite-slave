@@ -9,7 +9,7 @@
 
 `define CLOCK_PERIOD 10
 
-module tb();
+module wr_tb();
 
   logic clock;
 
