@@ -11,7 +11,7 @@ class driver #(type input_if);
   local axi4l_bfm                bfm;
   local mailbox                  gen2drv_mbx;
   local mailbox                  drv2chk_mbx;
-  local axi4l_transaction        tr_tx;
+  local axi4l_transaction        master_tr;
   local event                    reset_ev;
 
   function new(test_config conf,
@@ -39,17 +39,17 @@ class driver #(type input_if);
     bfm.align_clock();
 
     repeat (conf.trans_num) begin
-      gen2drv_mbx.get(tr_tx);
-      tr_tx.dump();
+      gen2drv_mbx.get(master_tr);
+      master_tr.dump();
 
-      bfm.drive_transaction(tr_tx,
+      bfm.drive_transaction(master_tr,
                             conf.timeout_clocks,
                             response);
 
       assert(response == 2'b00)
         begin
           $display("[%0t] SUCCESS RESPONSE", $time());
-          drv2chk_mbx.put(tr_tx);
+          drv2chk_mbx.put(master_tr);
         end
       else
         begin

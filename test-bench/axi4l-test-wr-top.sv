@@ -39,8 +39,8 @@ module wr_tb();
                          .o_wdata            ( reg_file_if0.axi4l_wdata      ),
                          .o_wvalid           ( reg_file_if0.axi4l_wvalid     ));
 
-  axi4l_wr_test test(axi4l_wr_if0,
-                     reg_file_if0);
+  axi4l_wr_test test( axi4l_wr_if0,
+                      reg_file_if0 );
 
   initial begin
     $dumpfile("dump.vcd");

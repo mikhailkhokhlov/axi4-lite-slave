@@ -10,8 +10,8 @@ class monitor #(type output_if);
   local axi4l_monitor_bfm mon_bfm;
   local mailbox           mon2chk_mbx;
   local mailbox           gen2mon_mbx;
-  local axi4l_transaction rx_tr;
-  local axi4l_transaction tx_tr;
+  local axi4l_transaction slave_tr;
+  local axi4l_transaction master_tr;
   local test_config       conf;
   local event             reset_ev;
 
@@ -27,8 +27,8 @@ class monitor #(type output_if);
     this.gen2mon_mbx = gen2mon_mbx;
     this.reset_ev    = reset_ev;
     this.mon_bfm     = wr_reg_if.mon_bfm;
-    this.tx_tr       = new();
-    this.rx_tr       = new();
+    this.master_tr       = new();
+    this.slave_tr       = new();
   endfunction
 
   task run();
@@ -38,21 +38,21 @@ class monitor #(type output_if);
       addr_t addr;
       data_t data;
 
-      gen2mon_mbx.get(tx_tr);
+      gen2mon_mbx.get(master_tr);
 
       mon_bfm.align_clock();
 
       fork : drive_output
-        mon_bfm.drive_output(tx_tr);
+        mon_bfm.drive_output(master_tr);
         mon_bfm.monitor(addr, data, conf.timeout_clocks);
       join_any : drive_output
 
       disable drive_output;
 
-      rx_tr.addr = addr;
-      rx_tr.data = data;
+      slave_tr.addr = addr;
+      slave_tr.data = data;
 
-      mon2chk_mbx.put(rx_tr);
+      mon2chk_mbx.put(slave_tr);
     end
   endtask
 

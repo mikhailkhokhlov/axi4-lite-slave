@@ -75,8 +75,8 @@ interface axi4lite_wr_if #(
                            input int               tm,
                            output logic [1:0]      rsp);
       fork
-        drive_awaddr     (tx_tr.addr_delay, tx_tr.addr, tm);
-        drive_wdata      (tx_tr.data_delay, tx_tr.data, tm);
+        drive_awaddr     (tx_tr.addr_delay,  tx_tr.addr, tm);
+        drive_wdata      (tx_tr.data_delay,  tx_tr.data, tm);
         wait_for_response(tx_tr.ready_delay, tm, "wait for BVALID", rsp);
       join
       $display("[%0t] axi_bresp = %2b", $time(), wr_cb.axi_bresp);
@@ -187,7 +187,7 @@ interface wr_reg_file_if #(
 
   class axi4l_wr_monitor_bfm extends axi4l_monitor_bfm;
     task drive_output(axi4l_transaction tx_tr);
-      //do nothing, will be disabled in fork-join_any
+      //do nothing for wr transaction, will be disabled in fork-join_any
       forever @wr_cb;
     endtask
 

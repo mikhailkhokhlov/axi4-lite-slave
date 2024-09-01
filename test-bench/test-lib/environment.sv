@@ -32,6 +32,7 @@ class environment #(type input_if,
     this.output_reg_if = output_reg_if;
   endfunction
 
+  //TODO: move constants to conf file or Makefile
   function void build();
     conf = new(.trans_num      ( 10),
                .timeout_clocks (100));

@@ -9,8 +9,8 @@ class scoreboard;
   local mailbox mon2chk_mbx;
   local mailbox drv2chk_mbx;
 
-  local axi4l_transaction input_trans;
-  local axi4l_transaction output_trans;
+  local axi4l_transaction master_trans;
+  local axi4l_transaction slave_trans;
 
   local test_config conf;
 
@@ -20,31 +20,31 @@ class scoreboard;
     this.conf         = conf;
     this.mon2chk_mbx  = mon2chk_mbx;
     this.drv2chk_mbx  = drv2chk_mbx;
-    this.input_trans  = new();
-    this.output_trans = new();
+    this.master_trans  = new();
+    this.slave_trans = new();
   endfunction
 
   task run();
     repeat (conf.trans_num) begin
-      drv2chk_mbx.get(input_trans);
-      mon2chk_mbx.get(output_trans);
+      drv2chk_mbx.get(master_trans);
+      mon2chk_mbx.get(slave_trans);
 
-      assert(input_trans.addr == output_trans.addr)
+      assert(master_trans.addr == slave_trans.addr)
         $display("[%0t] SUCCESS address transaction check. Addr: 0x%08x",
-                 $time(), output_trans.addr);
+                 $time(), slave_trans.addr);
       else begin
         $error("[%0t] FAIL address transaction check.", $time());
         $error("Expected: 0x%08x, Got: 0x%08x",
-               input_trans.addr, output_trans.addr);
+               master_trans.addr, slave_trans.addr);
       end
 
-      assert(input_trans.data == output_trans.data)
+      assert(master_trans.data == slave_trans.data)
         $display("[%0t] SUCCESS data transation check. Data: 0x%08x",
-                 $time(), output_trans.data);
+                 $time(), slave_trans.data);
       else begin
         $error("[%0t] FAIL data transaction check.", $time());
         $error("Expected: 0x%08x, Got: 0x%08x",
-               input_trans.data, output_trans.data);
+               master_trans.data, slave_trans.data);
       end
     end
   endtask
