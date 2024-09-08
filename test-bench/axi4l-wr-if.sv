@@ -42,7 +42,7 @@ interface axi4lite_wr_if #(
     input  axi_bvalid;
   endclocking
 
-  class axi4l_rw_bfm extends axi4l_bfm;
+  class axi4l_rw_bfm extends axi4l_master_bfm;
     task reset_bus();
       wait(~axi_areset_n);
 
@@ -71,98 +71,98 @@ interface axi4lite_wr_if #(
       axi_areset_n <= 1;
     endtask
 
-    task drive_transaction(inout axi4l_transaction tx_tr,
-                           input int               tm,
-                           output logic [1:0]      rsp);
+    task drive_transaction(input axi4l_transaction tx_tr,
+                           input int               tm);
       fork
-        drive_awaddr     (tx_tr.addr_delay,  tx_tr.addr, tm);
-        drive_wdata      (tx_tr.data_delay,  tx_tr.data, tm);
-        wait_for_response(tx_tr.ready_delay, tm, "wait for BVALID", rsp);
+        drive_awaddr(tx_tr.addr_delay, tx_tr.addr, tm);
+        drive_wdata (tx_tr.data_delay, tx_tr.data, tm);
       join
-      $display("[%0t] axi_bresp = %2b", $time(), wr_cb.axi_bresp);
     endtask
 
-   local task drive_awaddr(input delay_t delay,
-                           input addr_t  addr,
+    task monitor_data(output data_t data);
+      data = 'x;
+//      while (~wr_cb.axi_bvalid) @wr_cb;
+    endtask
+
+    task wait_for_response(input int          delay,
+                           input int          tm,
+                           output logic [1:0] rsp);
+      repeat(delay) @wr_cb;
+
+      wr_cb.axi_bready <= 1;
+
+      @wr_cb;
+
+      fork : wait_for_bvalid
+        while (~wr_cb.axi_bvalid) @wr_cb;
+        timeout(tm, "wait for BVALID");
+      join_any : wait_for_bvalid
+
+      disable wait_for_bvalid;
+
+      rsp = wr_cb.axi_bresp;
+      wr_cb.axi_bready <= 0;
+//      $display("bresp = %2b", rsp);
+    endtask
+
+    local task drive_awaddr(input delay_t delay,
+                            input addr_t  addr,
+                            input int     tm);
+      repeat(delay) @(wr_cb);
+
+      wr_cb.axi_awaddr       <= addr;
+      wr_cb.axi_awprot       <= 0;
+      wr_cb.axi_awaddr_valid <= 1;
+
+      @wr_cb;
+
+      fork : wait_for_aw_ready
+        while (wr_cb.axi_awaddr_ready != 1) @wr_cb;
+        timeout(tm, "drive awaddr");
+      join_any : wait_for_aw_ready
+
+      disable wait_for_aw_ready;
+
+      wr_cb.axi_awaddr       <= 0;
+      wr_cb.axi_awaddr_valid <= 0;
+      wr_cb.axi_awprot       <= 0;
+    endtask
+
+    local task drive_wdata(input delay_t delay,
+                           input data_t  data,
                            input int     tm);
-     repeat(delay) @(wr_cb);
+      repeat(delay) @(wr_cb);
 
-     wr_cb.axi_awaddr       <= addr;
-     wr_cb.axi_awprot       <= 0;
-     wr_cb.axi_awaddr_valid <= 1;
+      wr_cb.axi_wdata       <= data;
+      wr_cb.axi_wstrb       <= {AXI_STRB_WIDTH{1'b1}};
+      wr_cb.axi_wdata_valid <= 1;
 
-     @wr_cb;
+      @wr_cb;
 
-     fork : wait_for_aw_ready
-       while (wr_cb.axi_awaddr_ready != 1) @wr_cb;
-       timeout(tm, "drive awaddr");
-     join_any : wait_for_aw_ready
+      fork : wait_for_wdata_ready
+        while (~wr_cb.axi_wdata_ready) @wr_cb;
+        timeout(tm, "drive wdata");
+      join_any : wait_for_wdata_ready
 
-     disable wait_for_aw_ready;
+      disable wait_for_wdata_ready;
 
-     wr_cb.axi_awaddr       <= 0;
-     wr_cb.axi_awaddr_valid <= 0;
-     wr_cb.axi_awprot       <= 0;
-   endtask
+      wr_cb.axi_wdata       <= 0;
+      wr_cb.axi_wstrb       <= {AXI_STRB_WIDTH{1'b0}};
+      wr_cb.axi_wdata_valid <= 0;
+    endtask
 
-   local task drive_wdata(input delay_t delay,
-                          input data_t  data,
-                          input int     tm);
-     repeat(delay) @(wr_cb);
-
-     wr_cb.axi_wdata       <= data;
-     wr_cb.axi_wstrb       <= {AXI_STRB_WIDTH{1'b1}};
-     wr_cb.axi_wdata_valid <= 1;
-
-     @wr_cb;
-
-     fork : wait_for_wdata_ready
-       while (~wr_cb.axi_wdata_ready) @wr_cb;
-       timeout(tm, "drive wdata");
-     join_any : wait_for_wdata_ready
-
-     disable wait_for_wdata_ready;
-
-     wr_cb.axi_wdata       <= 0;
-     wr_cb.axi_wstrb       <= {AXI_STRB_WIDTH{1'b0}};
-     wr_cb.axi_wdata_valid <= 0;
-   endtask
-
-   local task wait_for_response(input int          delay,
-                                input int          tm,
-                                input string       op,
-                                output logic [1:0] rsp) ;
-     repeat(delay) @wr_cb;
-
-     wr_cb.axi_bready <= 1;
-
-     @wr_cb;
-
-     fork : wait_for_bvalid
-       while (~wr_cb.axi_bvalid) @wr_cb;
-       timeout(tm, op);
-     join_any : wait_for_bvalid
-
-     disable wait_for_bvalid;
-
-     wr_cb.axi_bready <= 0;
-
-     rsp = wr_cb.axi_bresp;
-
-   endtask
-
-   local task timeout(input int tm,
-                      input string op);
-     repeat (tm) @wr_cb;
-     $display("[%0t] Timeout %s", $time(), op);
-     $stop();
-   endtask
+    task timeout(input int tm,
+                 input string op);
+      repeat (tm) @wr_cb;
+      $display("[%0t] Timeout(%d) %s", $time(), tm, op);
+      $stop();
+    endtask
 
   endclass : axi4l_rw_bfm
 
-  axi4l_rw_bfm bfm = new();
+  axi4l_rw_bfm in_bfm = new();
 
-  modport TEST(import bfm);
+  modport TEST(import in_bfm);
 
 endinterface : axi4lite_wr_if
 
@@ -179,48 +179,49 @@ interface wr_reg_file_if #(
   logic [(AXI_ADDR_WIDTH - 1):0] axi4l_waddr;
   logic                          axi4l_wvalid;
 
-  clocking wr_cb @(posedge axi4l_clock);
+  clocking out_wr_cb @(posedge axi4l_clock);
     input axi4l_wdata;
     input axi4l_waddr;
     input axi4l_wvalid;
   endclocking
 
-  class axi4l_wr_monitor_bfm extends axi4l_monitor_bfm;
-    task drive_output(axi4l_transaction tx_tr);
-      //do nothing for wr transaction, will be disabled in fork-join_any
-      forever @wr_cb;
+  class axi4l_wr_output_bfm extends axi4l_output_bfm;
+
+    task monitor_output(output    addr_t addr,
+                        output    data_t data,
+                        input int tm);
+      fork : wait_for_wvalid
+        while (~out_wr_cb.axi4l_wvalid) @out_wr_cb;
+        timeout(tm, "wait for output wvalid");
+      join_any : wait_for_wvalid
+
+      disable wait_for_wvalid;
+
+      addr = out_wr_cb.axi4l_waddr;
+      data = out_wr_cb.axi4l_wdata;
     endtask
 
-    task monitor(output addr_t addr,
-                 output data_t data,
-                 input int tm);
-      fork : wait_for_valid
-        while (~wr_cb.axi4l_wvalid) @wr_cb;
-        timeout(tm, "monitor data valid");
-      join_any : wait_for_valid
-
-      disable wait_for_valid;
-
-      addr = wr_cb.axi4l_waddr;
-      data = wr_cb.axi4l_wdata;
+    task drive_output(input     data_t data,
+                      input int tm);
+      //do nothing for wr transaction
     endtask
 
-    local task timeout(input int tm,
-                       input string op);
-      repeat (tm) @wr_cb;
+    task timeout(input int tm,
+                 input string op);
+      repeat (tm) @out_wr_cb;
       $display("[%0t] Timeout %s", $time(), op);
       $stop();
     endtask
 
     task align_clock();
-      @wr_cb;
+      @out_wr_cb;
     endtask
 
-  endclass : axi4l_wr_monitor_bfm
+  endclass : axi4l_wr_output_bfm
 
-  axi4l_wr_monitor_bfm mon_bfm = new();
+  axi4l_wr_output_bfm out_bfm = new();
 
-  modport TEST(import mon_bfm);
+  modport TEST(import out_bfm);
 
 endinterface : wr_reg_file_if
 

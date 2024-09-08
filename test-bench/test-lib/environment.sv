@@ -17,19 +17,19 @@ class environment #(type input_if,
   local mailbox gen2mon_mbx;
   local event   reset_ev;
 
-  local driver      #(input_if ) drv;
-  local monitor     #(output_if) mon;
-  local generator                gen;
-  local scoreboard               scrbrd;
-  local test_config              conf;
+  local driver      #(input_if, output_if) drv;
+  local monitor     #(input_if, output_if) mon;
+  local generator                          gen;
+  local scoreboard                         scrbrd;
+  local test_config                        conf;
 
-  input_if  axi4l_if;
-  output_if output_reg_if;
+  input_if  in_if;
+  output_if out_if;
 
-  function new(input_if  axi4l_if,
-               output_if output_reg_if);
-    this.axi4l_if      = axi4l_if;
-    this.output_reg_if = output_reg_if;
+  function new(input_if  in_if,
+               output_if out_if);
+    this.in_if  = in_if;
+    this.out_if = out_if;
   endfunction
 
   //TODO: move constants to conf file or Makefile
@@ -43,8 +43,8 @@ class environment #(type input_if,
     mon2chk_mbx = new();
 
     gen         = new(conf, gen2drv_mbx,   gen2mon_mbx);
-    drv         = new(conf, axi4l_if,      gen2drv_mbx, drv2chk_mbx, reset_ev);
-    mon         = new(conf, output_reg_if, mon2chk_mbx, gen2mon_mbx, reset_ev);
+    drv         = new(conf, in_if, out_if, gen2drv_mbx, drv2chk_mbx, reset_ev);
+    mon         = new(conf, in_if, out_if, mon2chk_mbx, gen2mon_mbx, reset_ev);
     scrbrd      = new(conf, mon2chk_mbx,   drv2chk_mbx);
   endfunction
 

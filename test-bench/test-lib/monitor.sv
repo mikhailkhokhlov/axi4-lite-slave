@@ -4,10 +4,11 @@
 `include "transaction.sv"
 `include "test-config.sv"
 
-class monitor #(type output_if);
+class monitor #(type input_if,
+                type output_if);
 
-  local output_if         wr_reg_if;
-  local axi4l_monitor_bfm mon_bfm;
+  local axi4l_master_bfm  in_bfm;
+  local axi4l_output_bfm  out_bfm;
   local mailbox           mon2chk_mbx;
   local mailbox           gen2mon_mbx;
   local axi4l_transaction slave_tr;
@@ -16,19 +17,20 @@ class monitor #(type output_if);
   local event             reset_ev;
 
   function new(test_config conf,
-               output_if   wr_reg_if,
+               input_if    in_if,
+               output_if   out_if,
                mailbox     mon2chk_mbx,
                mailbox     gen2mon_mbx,
                event       reset_ev);
 
     this.conf        = conf;
-    this.wr_reg_if   = wr_reg_if;
     this.mon2chk_mbx = mon2chk_mbx;
     this.gen2mon_mbx = gen2mon_mbx;
     this.reset_ev    = reset_ev;
-    this.mon_bfm     = wr_reg_if.mon_bfm;
-    this.master_tr       = new();
-    this.slave_tr       = new();
+    this.out_bfm     = out_if.out_bfm;
+    this.in_bfm      = in_if.in_bfm;
+    this.master_tr   = new();
+    this.slave_tr    = new();
   endfunction
 
   task run();
@@ -36,21 +38,22 @@ class monitor #(type output_if);
 
     repeat (conf.trans_num) begin
       addr_t addr;
-      data_t data;
+      data_t data_out;
+      data_t data_in;
 
       gen2mon_mbx.get(master_tr);
 
-      mon_bfm.align_clock();
+      out_bfm.align_clock();
 
-      fork : drive_output
-        mon_bfm.drive_output(master_tr);
-        mon_bfm.monitor(addr, data, conf.timeout_clocks);
-      join_any : drive_output
+      fork : monitor_output
+        in_bfm.monitor_data(data_in);
+        out_bfm.monitor_output(addr, data_out, conf.timeout_clocks);
+      join : monitor_output
 
-      disable drive_output;
+      disable monitor_output;
 
       slave_tr.addr = addr;
-      slave_tr.data = data;
+      slave_tr.data = (data_in === 'x) ? data_out : data_in;
 
       mon2chk_mbx.put(slave_tr);
     end

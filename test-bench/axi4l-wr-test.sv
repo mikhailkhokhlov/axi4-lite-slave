@@ -1,5 +1,5 @@
-`ifndef _AXI4L_RW_TEST_SV_
-`define _AXI4L_RW_TEST_SV_
+`ifndef _AXI4L_WR_TEST_SV_
+`define _AXI4L_WR_TEST_SV_
 
 program axi4l_wr_test(axi4lite_wr_if.TEST axi4l_wr_if,
                       wr_reg_file_if.TEST wr_reg_if);
@@ -19,4 +19,4 @@ program axi4l_wr_test(axi4lite_wr_if.TEST axi4l_wr_if,
 
 endprogram
 
-`endif // _AXI4L_RW_TEST_SV_
+`endif // _AXI4L_WR_TEST_SV_
