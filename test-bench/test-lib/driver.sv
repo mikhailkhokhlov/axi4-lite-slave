@@ -3,18 +3,18 @@
 
 `include "transaction.sv"
 `include "test-config.sv"
-`include "axi4l-bfm.sv"
+`include "bfm.sv"
 
 class driver #(type input_if,
                type output_if);
 
-  local test_config              conf;
-  local axi4l_master_bfm         in_bfm;
-  local axi4l_output_bfm         out_bfm;
-  local mailbox                  gen2drv_mbx;
-  local mailbox                  drv2chk_mbx;
-  local axi4l_transaction        master_tr;
-  local event                    reset_ev;
+  local test_config conf;
+  local master_bfm  in_bfm;
+  local output_bfm  out_bfm;
+  local mailbox     gen2drv_mbx;
+  local mailbox     drv2chk_mbx;
+  local transaction master_tr;
+  local event       reset_ev;
 
   function new(test_config conf,
                input_if    in_if,

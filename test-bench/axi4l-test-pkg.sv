@@ -1,6 +1,6 @@
 package axi4l_test;
 
-  `include "test-lib/axi4l-bfm.sv"
+  `include "test-lib/bfm.sv"
   `include "test-lib/test-config.sv"
   `include "test-lib/transaction.sv"
   `include "test-lib/monitor.sv"

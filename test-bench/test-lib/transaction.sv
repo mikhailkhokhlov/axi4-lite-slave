@@ -9,7 +9,7 @@ typedef logic [1:0]                    delay_t;
 typedef logic [(AXI_ADDR_WIDTH - 1):0] addr_t;
 typedef logic [(AXI_DATA_WIDTH - 1):0] data_t;
 
-class axi4l_transaction;
+class transaction;
 
   rand addr_t addr;
   rand data_t data;
@@ -33,6 +33,6 @@ class axi4l_transaction;
     $display("response ready delay : %d", ready_delay);
   endfunction
 
-endclass : axi4l_transaction
+endclass : transaction
 
 `endif // _TRANSACTION_SV_

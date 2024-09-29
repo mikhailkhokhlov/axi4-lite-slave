@@ -9,8 +9,8 @@ class scoreboard;
   local mailbox mon2chk_mbx;
   local mailbox drv2chk_mbx;
 
-  local axi4l_transaction master_trans;
-  local axi4l_transaction slave_trans;
+  local transaction master_trans;
+  local transaction slave_trans;
 
   local test_config conf;
 

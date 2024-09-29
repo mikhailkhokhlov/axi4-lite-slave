@@ -44,7 +44,7 @@ interface axi4lite_wr_if #(
     input  axi_bvalid;
   endclocking
 
-  class axi4l_rw_bfm extends axi4l_master_bfm;
+  class axi4l_rw_bfm extends master_bfm;
     task reset_bus();
       wait(~axi_areset_n);
 
@@ -73,8 +73,8 @@ interface axi4lite_wr_if #(
       axi_areset_n <= 1;
     endtask
 
-    task drive_transaction(input axi4l_transaction tx_tr,
-                           input int               tm);
+    task drive_transaction(input transaction tx_tr,
+                           input int         tm);
       fork
         drive_awaddr(tx_tr.addr_delay, tx_tr.addr, tm);
         drive_wdata (tx_tr.data_delay, tx_tr.data, tm);
@@ -186,7 +186,7 @@ interface wr_reg_file_if #(
     input axi4l_wvalid;
   endclocking
 
-  class axi4l_wr_output_bfm extends axi4l_output_bfm;
+  class axi4l_wr_output_bfm extends output_bfm;
 
     task monitor_output(output    addr_t addr,
                         output    data_t data,

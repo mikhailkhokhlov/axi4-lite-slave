@@ -48,7 +48,7 @@ interface axi4lite_rd_if #(
     input axi_rdata_ready;
   endclocking
 
-  class axi4l_rd_bfm extends axi4l_master_bfm;
+  class axi4l_rd_bfm extends master_bfm;
     task reset_bus();
       wait(~axi_areset_n);
 
@@ -74,9 +74,9 @@ interface axi4lite_rd_if #(
       @(rd_cb);
     endtask
 
-    task drive_transaction(input axi4l_transaction tx_tr,
-                           input int               tm);
-      drive_araddr(tx_tr.addr_delay,  tx_tr.addr, tm);
+    task drive_transaction(input transaction tx_tr,
+                           input int         tm);
+      drive_araddr(tx_tr.addr_delay, tx_tr.addr, tm);
     endtask
 
     local task drive_araddr(input delay_t delay,
@@ -166,7 +166,7 @@ interface rd_reg_file_if #(
     output axi4l_rdata;
   endclocking
 
-  class axi4l_rd_monitor_bfm extends axi4l_output_bfm;
+  class axi4l_rd_monitor_bfm extends output_bfm;
 
     task drive_output(input data_t data,
                       input int    tm);
