@@ -30,8 +30,8 @@ class scoreboard;
       mon2chk_mbx.get(slave_trans);
 
       assert(master_trans.addr == slave_trans.addr)
-        $display("[%0t] SUCCESS address transaction check. Addr: 0x%08x",
-                 $time(), slave_trans.addr);
+        $display("[%0t] SUCCESS address transaction check. Slave addr: 0x%08x, Master addr: 0x%08x",
+                 $time(), slave_trans.addr, master_trans.addr);
       else begin
         $error("[%0t] FAIL address transaction check.", $time());
         $error("Expected: 0x%08x, Got: 0x%08x",
@@ -39,8 +39,8 @@ class scoreboard;
       end
 
       assert(master_trans.data == slave_trans.data)
-        $display("[%0t] SUCCESS data transation check. Data: 0x%08x",
-                 $time(), slave_trans.data);
+        $display("[%0t] SUCCESS data transation check. Slave data: 0x%08x, Master data: 0x%08x",
+                 $time(), slave_trans.data, master_trans.data);
       else begin
         $error("[%0t] FAIL data transaction check.", $time());
         $error("Expected: 0x%08x, Got: 0x%08x",

@@ -22,7 +22,6 @@ class generator;
   task run();
     repeat(conf.trans_num) begin
       axi4l_transaction tr = new();
-
       assert (tr.randomize())
         begin
           gen2drv_mbx.put(tr);

@@ -3,6 +3,7 @@
 
 `include "transaction.sv"
 `include "test-config.sv"
+`include "axi4l-bfm.sv"
 
 class monitor #(type input_if,
                 type output_if);
@@ -47,10 +48,10 @@ class monitor #(type input_if,
 
       fork : monitor_output
         in_bfm.monitor_data(data_in);
-        out_bfm.monitor_output(addr, data_out, conf.timeout_clocks);
+        out_bfm.monitor_output(addr,
+                               data_out,
+                               conf.timeout_clocks);
       join : monitor_output
-
-      disable monitor_output;
 
       slave_tr.addr = addr;
       slave_tr.data = (data_in === 'x) ? data_out : data_in;

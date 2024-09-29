@@ -27,6 +27,8 @@ interface axi4lite_wr_if #(
   logic                          axi_bvalid;
 
   clocking wr_cb @(posedge axi4l_clock);
+    default input #1step output #1step;
+
     output axi_awaddr;
     output axi_awprot;
     output axi_awaddr_valid;
@@ -81,7 +83,6 @@ interface axi4lite_wr_if #(
 
     task monitor_data(output data_t data);
       data = 'x;
-//      while (~wr_cb.axi_bvalid) @wr_cb;
     endtask
 
     task wait_for_response(input int          delay,
@@ -91,10 +92,10 @@ interface axi4lite_wr_if #(
 
       wr_cb.axi_bready <= 1;
 
-      @wr_cb;
-
       fork : wait_for_bvalid
-        while (~wr_cb.axi_bvalid) @wr_cb;
+        do
+          @wr_cb;
+        while (~wr_cb.axi_bvalid);
         timeout(tm, "wait for BVALID");
       join_any : wait_for_bvalid
 
@@ -114,11 +115,11 @@ interface axi4lite_wr_if #(
       wr_cb.axi_awprot       <= 0;
       wr_cb.axi_awaddr_valid <= 1;
 
-      @wr_cb;
-
       fork : wait_for_aw_ready
-        while (wr_cb.axi_awaddr_ready != 1) @wr_cb;
-        timeout(tm, "drive awaddr");
+        do
+          @wr_cb;
+        while (~wr_cb.axi_awaddr_ready);
+        timeout(tm, "drive AXI_AWADDR");
       join_any : wait_for_aw_ready
 
       disable wait_for_aw_ready;
@@ -137,11 +138,11 @@ interface axi4lite_wr_if #(
       wr_cb.axi_wstrb       <= {AXI_STRB_WIDTH{1'b1}};
       wr_cb.axi_wdata_valid <= 1;
 
-      @wr_cb;
-
       fork : wait_for_wdata_ready
-        while (~wr_cb.axi_wdata_ready) @wr_cb;
-        timeout(tm, "drive wdata");
+        do
+          @wr_cb;
+        while (~wr_cb.axi_wdata_ready);
+        timeout(tm, "drive AXI_WDATA");
       join_any : wait_for_wdata_ready
 
       disable wait_for_wdata_ready;
@@ -151,7 +152,7 @@ interface axi4lite_wr_if #(
       wr_cb.axi_wdata_valid <= 0;
     endtask
 
-    task timeout(input int tm,
+    task timeout(input int    tm,
                  input string op);
       repeat (tm) @wr_cb;
       $display("[%0t] Timeout(%d) %s", $time(), tm, op);
@@ -203,7 +204,7 @@ interface wr_reg_file_if #(
 
     task drive_output(input     data_t data,
                       input int tm);
-      //do nothing for wr transaction
+      //do nothing for axi4lite write transaction
     endtask
 
     task timeout(input int tm,

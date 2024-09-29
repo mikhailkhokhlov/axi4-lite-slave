@@ -3,6 +3,7 @@
 
 `include "transaction.sv"
 `include "test-config.sv"
+`include "axi4l-bfm.sv"
 
 class driver #(type input_if,
                type output_if);
@@ -30,23 +31,20 @@ class driver #(type input_if,
     this.reset_ev    = reset_ev;
   endfunction
 
-  local task wait_for_response_internal(input int delay,
-                                        input int tm);
+  local task do_wait_for_response(input int delay,
+                                  input int tm);
     logic [1:0] response = 2'b11;
 
     in_bfm.wait_for_response(master_tr.ready_delay,
                              tm,
                              response);
-
-    $display("response = %2b", response);
     assert(response == 2'b00)
       begin
-        $display("[%0t] SUCCESS RESPONSE", $time());
-        drv2chk_mbx.put(master_tr);
+        $display("[%0t][driver] SUCCESS RESPONSE", $time());
       end
     else
       begin
-        $display("[%0t] FAIL RESPONSE", $time());
+        $display("[%0t][driver] FAIL RESPONSE", $time());
         $stop();
       end
 
@@ -71,9 +69,11 @@ class driver #(type input_if,
                              conf.timeout_clocks);
         in_bfm.drive_transaction(master_tr,
                                  conf.timeout_clocks);
-        wait_for_response_internal(master_tr.ready_delay,
-                                   conf.timeout_clocks);
+        do_wait_for_response(master_tr.ready_delay,
+                             conf.timeout_clocks);
       join
+
+      drv2chk_mbx.put(master_tr);
     end // repeat
   endtask
 

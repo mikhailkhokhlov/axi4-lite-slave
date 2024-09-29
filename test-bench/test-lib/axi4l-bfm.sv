@@ -4,7 +4,7 @@
 `include "transaction.sv"
 
 virtual class base_bfm;
-  pure virtual task timeout(input int tm,
+  pure virtual task timeout(input int    tm,
                             input string op);
 endclass : base_bfm
 
