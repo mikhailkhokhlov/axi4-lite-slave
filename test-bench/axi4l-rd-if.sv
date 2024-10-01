@@ -170,6 +170,8 @@ interface rd_reg_file_if #(
 
     task drive_output(input data_t data,
                       input int    tm);
+
+      out_rd_cb.axi4l_rdata <= {AXI_DATA_WIDTH{1'b0}};
       do
         @out_rd_cb;
       while (~axi4l_raddr_valid);

@@ -2,29 +2,27 @@
 
 `include "dff-async-rst-n.v"
 
-module s_axi4l_rd_channel #(
-  parameter AXI_DATA_WIDTH = 32,
-  parameter AXI_ADDR_WIDTH = 4,
-  parameter AXI_STRB_WIDTH = (AXI_DATA_WIDTH / 8)
-) (
-  input                           i_axi_clock,
-  input                           i_axi_aresetn,
-  // read address channel
-  input [(AXI_ADDR_WIDTH - 1):0]  i_axi_araddr,
-  input [                   3:0]  i_axi_arcache,
-  input [                   2:0]  i_axi_arprot,
-  input                           i_axi_araddr_valid,
-  output                          o_axi_araddr_ready,
-  // read data channel
-  output [(AXI_DATA_WIDTH - 1):0] o_axi_rdata,
-  output [                   1:0] o_axi_rresp,
-  output                          o_axi_rdata_valid,
-  input                           i_axi_rdata_ready,
-  // register input signals
-  output [(AXI_ADDR_WIDTH - 1):0] o_raddr,
-  output                          o_raddr_valid,
-  input  [(AXI_DATA_WIDTH - 1):0] i_rdata
-);
+module s_axi4l_rd_channel #(parameter AXI_DATA_WIDTH = 32,
+                            parameter AXI_ADDR_WIDTH = 4,
+                            parameter AXI_STRB_WIDTH = (AXI_DATA_WIDTH / 8))
+
+                           (input                           i_axi_clock,
+                            input                           i_axi_aresetn,
+                            // read address channel
+                            input [(AXI_ADDR_WIDTH - 1):0]  i_axi_araddr,
+                            input [                   3:0]  i_axi_arcache,
+                            input [                   2:0]  i_axi_arprot,
+                            input                           i_axi_araddr_valid,
+                            output                          o_axi_araddr_ready,
+                            // read data channel
+                            output [(AXI_DATA_WIDTH - 1):0] o_axi_rdata,
+                            output [                   1:0] o_axi_rresp,
+                            output                          o_axi_rdata_valid,
+                            input                           i_axi_rdata_ready,
+                            // register input signals
+                            output [(AXI_ADDR_WIDTH - 1):0] o_raddr,
+                            output                          o_raddr_valid,
+                            input  [(AXI_DATA_WIDTH - 1):0] i_rdata);
 
   localparam IDLE       = 2'b00;
   localparam RADDR_RECV = 2'b01;

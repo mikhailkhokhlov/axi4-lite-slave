@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 `include "skid-buffer.v"
+`include "dff-async-rst-n.v"
 
 module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
                             parameter AXI_ADDR_WIDTH = 4,
@@ -32,74 +33,83 @@ module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
   localparam WAIT_FOR_WDATA_VALID = 2'b10;
   localparam BRESP                = 2'b11;
 
-  reg [1:0]                    reg_state;
-  reg [1:0]                    next_state;
+  reg [1:0]                     reg_state;
+  reg [1:0]                     next_state;
 
-  wire                         awaddr_valid;
-  wire                         awaddr_ready;
-  reg [(AXI_ADDR_WIDTH - 1):0] next_awaddr;
-  reg [(AXI_ADDR_WIDTH - 1):0] reg_awaddr;
+  wire                          awaddr_valid;
+  wire                          awaddr_ready;
+  wire                          awaddr_hs;
+  wire [(AXI_ADDR_WIDTH - 1):0] next_awaddr;
+  wire [(AXI_ADDR_WIDTH - 1):0] axi_awaddr;
 
   assign awaddr_ready = ((reg_state == IDLE) | (reg_state == WAIT_FOR_WADDR_VALID)) ? 1'b1 : 1'b0;
 
-  skid_buffer #(.DWIDTH(AXI_ADDR_WIDTH)) awddr_buff(.i_clock      ( i_axi_clock        ),
-                                                    .i_areset_n   ( i_axi_aresetn      ),
-                                                    .i_data       ( i_axi_awaddr       ),
-                                                    .i_data_valid ( i_axi_awaddr_valid ),
-                                                    .o_data_ready ( o_axi_awaddr_ready ),
-                                                    .o_data       ( next_awaddr        ),
-                                                    .o_data_valid ( awaddr_valid       ),
-                                                    .i_data_ready ( awaddr_ready       ));
+  skid_buffer #(.DWIDTH(AXI_ADDR_WIDTH)) awddr_buff( .i_clock      ( i_axi_clock        ),
+                                                     .i_areset_n   ( i_axi_aresetn      ),
+                                                     .i_data       ( i_axi_awaddr       ),
+                                                     .i_data_valid ( i_axi_awaddr_valid ),
+                                                     .o_data_ready ( o_axi_awaddr_ready ),
+                                                     .o_data       ( next_awaddr        ),
+                                                     .o_data_valid ( awaddr_valid       ),
+                                                     .i_data_ready ( awaddr_ready       ));
 
-  always @(posedge i_axi_clock, negedge i_axi_aresetn)
-    if (~i_axi_aresetn)
-      reg_awaddr <= {AXI_ADDR_WIDTH{1'b0}};
-    else if (awaddr_valid & awaddr_ready)
-      reg_awaddr <= next_awaddr;
+  assign awaddr_hs = (awaddr_valid & awaddr_ready);
 
-  wire                         wdata_valid;
-  wire                         wdata_ready;
-  reg [(AXI_DATA_WIDTH - 1):0] next_wdata;
-  reg [(AXI_DATA_WIDTH - 1):0] reg_wdata;
+  dff_async_rst_n #(.WIDTH(AXI_ADDR_WIDTH)) ff_awaddr( .i_clock    ( i_axi_clock   ),
+                                                       .i_areset_n ( i_axi_aresetn ),
+                                                       .en         ( awaddr_hs     ),
+                                                       .d          ( next_awaddr   ),
+                                                       .q          ( axi_awaddr    ));
+
+  wire                          wdata_valid;
+  wire                          wdata_ready;
+  wire                          wdata_hs;
+  wire [(AXI_DATA_WIDTH - 1):0] next_wdata;
+  wire [(AXI_DATA_WIDTH - 1):0] axi_wdata;
 
   assign wdata_ready = ((reg_state == IDLE) | (reg_state == WAIT_FOR_WDATA_VALID)) ? 1'b1 : 1'b0;
 
-  skid_buffer #(.DWIDTH(AXI_DATA_WIDTH)) wdata_buff(.i_clock      ( i_axi_clock       ),
-                                                    .i_areset_n   ( i_axi_aresetn     ),
-                                                    .i_data       ( i_axi_wdata       ),
-                                                    .i_data_valid ( i_axi_wdata_valid ),
-                                                    .o_data_ready ( o_axi_wdata_ready ),
-                                                    .o_data       ( next_wdata        ),
-                                                    .o_data_valid ( wdata_valid       ),
-                                                    .i_data_ready ( wdata_ready       ));
+  skid_buffer #(.DWIDTH(AXI_DATA_WIDTH)) wdata_buff( .i_clock      ( i_axi_clock       ),
+                                                     .i_areset_n   ( i_axi_aresetn     ),
+                                                     .i_data       ( i_axi_wdata       ),
+                                                     .i_data_valid ( i_axi_wdata_valid ),
+                                                     .o_data_ready ( o_axi_wdata_ready ),
+                                                     .o_data       ( next_wdata        ),
+                                                     .o_data_valid ( wdata_valid       ),
+                                                     .i_data_ready ( wdata_ready       ));
 
-  always @(posedge i_axi_clock, negedge i_axi_aresetn)
-    if (~i_axi_aresetn)
-      reg_wdata <= {AXI_ADDR_WIDTH{1'b0}};
-    else if (wdata_valid & wdata_ready)
-      reg_wdata <= next_wdata;
+  assign wdata_hs = (wdata_valid & wdata_ready);
 
-  wire                         wstrb_valid;
-  wire                         wstrb_ready;
-  reg [(AXI_STRB_WIDTH - 1):0] next_wstrb;
-  reg [(AXI_STRB_WIDTH - 1):0] reg_wstrb;
+  dff_async_rst_n #(.WIDTH(AXI_DATA_WIDTH)) ff_wdata( .i_clock    ( i_axi_clock   ),
+                                                      .i_areset_n ( i_axi_aresetn ),
+                                                      .en         ( wdata_hs      ),
+                                                      .d          ( next_wdata    ),
+                                                      .q          ( axi_wdata     ));
+
+  wire                          wstrb_valid;
+  wire                          wstrb_ready;
+  wire                          wstrb_hs;
+  wire [(AXI_STRB_WIDTH - 1):0] next_wstrb;
+  wire [(AXI_STRB_WIDTH - 1):0] axi_wstrb;
 
   assign wstrb_ready = wdata_ready;
 
-  skid_buffer #(.DWIDTH(AXI_STRB_WIDTH)) wstrb_buff(.i_clock      ( i_axi_clock       ),
-                                                    .i_areset_n   ( i_axi_aresetn     ),
-                                                    .i_data       ( i_axi_wstrb       ),
-                                                    .i_data_valid ( i_axi_wdata_valid ),
-                                                    .o_data_ready (                   ),
-                                                    .o_data       ( next_wstrb        ),
-                                                    .o_data_valid ( wstrb_valid       ),
-                                                    .i_data_ready ( wstrb_ready       ));
+  skid_buffer #(.DWIDTH(AXI_STRB_WIDTH)) wstrb_buff( .i_clock      ( i_axi_clock       ),
+                                                     .i_areset_n   ( i_axi_aresetn     ),
+                                                     .i_data       ( i_axi_wstrb       ),
+                                                     .i_data_valid ( i_axi_wdata_valid ),
+                                                     .o_data_ready (                   ),
+                                                     .o_data       ( next_wstrb        ),
+                                                     .o_data_valid ( wstrb_valid       ),
+                                                     .i_data_ready ( wstrb_ready       ));
 
-  always @(posedge i_axi_clock, negedge i_axi_aresetn)
-    if (~i_axi_aresetn)
-      reg_wstrb <= {AXI_STRB_WIDTH{1'b0}};
-    else if (wstrb_valid & wstrb_ready)
-      reg_wstrb <= next_wstrb;
+  assign wstrb_hs = (wstrb_valid & wstrb_ready);
+
+  dff_async_rst_n #(.WIDTH(AXI_STRB_WIDTH)) ff_wstrb( .i_clock    ( i_axi_clock   ),
+                                                      .i_areset_n ( i_axi_aresetn ),
+                                                      .en         ( wstrb_hs      ),
+                                                      .d          ( next_wstrb    ),
+                                                      .q          ( axi_wstrb     ));
 
   wire [1:0] bresp; 
   wire       bresp_valid;
@@ -154,8 +164,8 @@ module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
         strb_data[(i * 8) +: 8] = wdata[(i * 8) +: 8];
   endfunction
 
-  assign o_wdata  = (reg_state == BRESP) ? strb_data(reg_wdata, reg_wstrb) : {AXI_DATA_WIDTH{1'b0}};
-  assign o_waddr  = (reg_state == BRESP) ? reg_awaddr                      : {AXI_ADDR_WIDTH{1'b0}};
+  assign o_wdata  = (reg_state == BRESP) ? strb_data(axi_wdata, axi_wstrb) : {AXI_DATA_WIDTH{1'b0}};
+  assign o_waddr  = (reg_state == BRESP) ? axi_awaddr                      : {AXI_ADDR_WIDTH{1'b0}};
   assign o_wvalid = (reg_state == BRESP) ? 1'b1                            : 1'b0;
 
 endmodule
