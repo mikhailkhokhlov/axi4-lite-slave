@@ -1,37 +1,40 @@
+`ifndef _S_AXI4L_WR_CHANNEL_V_
+`define _S_AXI4L_WR_CHANNEL_V_
+
 `timescale 1ns / 1ps
 
 `include "skid-buffer.v"
 `include "dff-async-rst-n.v"
-
+ 
 module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
                             parameter AXI_ADDR_WIDTH = 4,
                             parameter AXI_STRB_WIDTH = (AXI_DATA_WIDTH / 8))
 
-                           (input                           i_axi_clock,
-                            input                           i_axi_aresetn,
+                           (input  wire                          i_axi_clock,
+                            input  wire                          i_axi_aresetn,
                             // write address channel
-                            input [(AXI_ADDR_WIDTH - 1):0]  i_axi_awaddr,
-                            input [2:0]                     i_axi_awprot,
-                            input                           i_axi_awaddr_valid,
-                            output                          o_axi_awaddr_ready,
+                            input  wire [(AXI_ADDR_WIDTH - 1):0] i_axi_awaddr,
+                            input  wire [2:0]                    i_axi_awprot,
+                            input  wire                          i_axi_awaddr_valid,
+                            output wire                          o_axi_awaddr_ready,
                             // write data channel
-                            input [(AXI_DATA_WIDTH - 1):0]  i_axi_wdata,
-                            input [(AXI_STRB_WIDTH - 1):0]  i_axi_wstrb,
-                            input                           i_axi_wdata_valid,
-                            output                          o_axi_wdata_ready,
+                            input  wire [(AXI_DATA_WIDTH - 1):0] i_axi_wdata,
+                            input  wire [(AXI_STRB_WIDTH - 1):0] i_axi_wstrb,
+                            input  wire                          i_axi_wdata_valid,
+                            output wire                          o_axi_wdata_ready,
                             // write response channel	
-                            output [1:0]                    o_axi_bresp,
-                            output                          o_axi_bvalid,
-                            input                           i_axi_bready,
+                            output wire [1:0]                    o_axi_bresp,
+                            output wire                          o_axi_bvalid,
+                            input  wire                          i_axi_bready,
                             // register output channel
-                            output [(AXI_ADDR_WIDTH - 1):0] o_waddr,
-                            output [(AXI_DATA_WIDTH - 1):0] o_wdata,
-                            output                          o_wvalid);
+                            output wire [(AXI_ADDR_WIDTH - 1):0] o_waddr,
+                            output wire [(AXI_DATA_WIDTH - 1):0] o_wdata,
+                            output wire                          o_wvalid);
 
-  localparam IDLE                 = 2'b00;
-  localparam WAIT_FOR_WADDR_VALID = 2'b01;
-  localparam WAIT_FOR_WDATA_VALID = 2'b10;
-  localparam BRESP                = 2'b11;
+  localparam IDLE                 = 2'b01;
+  localparam WAIT_FOR_WADDR_VALID = 2'b10;
+  localparam WAIT_FOR_WDATA_VALID = 2'b11;
+  localparam BRESP                = 2'b00;
 
   reg [1:0]                     reg_state;
   reg [1:0]                     next_state;
@@ -116,7 +119,7 @@ module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
   wire       bresp_ready;
 
   assign bresp_valid = (reg_state == BRESP) ? 1'b1  : 1'b0;
-  assign bresp =       (reg_state == BRESP) ? 2'b00 : 2'b10; //TODO: OKEY, SLVERR
+  assign bresp       = (reg_state == BRESP) ? 2'b00 : 2'b10; //TODO: OKEY, SLVERR
 
   skid_buffer #(.DWIDTH(2)) bresp_buff(.i_clock      ( i_axi_clock   ),
                                        .i_areset_n   ( i_axi_aresetn ),
@@ -133,7 +136,8 @@ module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
     else
       reg_state <= next_state;
 
-  always @(*)
+  always @(*) begin
+    next_state = reg_state;
     case (reg_state)
       IDLE:
         begin
@@ -153,15 +157,19 @@ module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
       BRESP:
         next_state = (bresp_ready ? IDLE : BRESP);
     endcase
+  end
 
-  function [AXI_DATA_WIDTH - 1:0] strb_data(input [AXI_DATA_WIDTH - 1:0] wdata,
-                                            input [AXI_STRB_WIDTH - 1:0] wstrb);
+  function [(AXI_DATA_WIDTH - 1):0] strb_data(input [(AXI_DATA_WIDTH - 1):0] wdata,
+                                              input [(AXI_STRB_WIDTH - 1):0] wstrb);   
     integer i;
-    strb_data = {AXI_DATA_WIDTH{1'b0}};
 
-    for (i = 0; i < AXI_STRB_WIDTH; i = i + 1)
-      if (wstrb[i] == 1)
-        strb_data[(i * 8) +: 8] = wdata[(i * 8) +: 8];
+    begin
+      strb_data = {AXI_DATA_WIDTH{1'b0}};
+    
+      for (i = 0; i < AXI_STRB_WIDTH; i = i + 1)
+        if (wstrb[i] == 1)
+          strb_data[(i * 8) +: 8] = wdata[(i * 8) +: 8];
+    end
   endfunction
 
   assign o_wdata  = (reg_state == BRESP) ? strb_data(axi_wdata, axi_wstrb) : {AXI_DATA_WIDTH{1'b0}};
@@ -169,3 +177,5 @@ module s_axi4l_wr_channel #(parameter AXI_DATA_WIDTH = 32,
   assign o_wvalid = (reg_state == BRESP) ? 1'b1                            : 1'b0;
 
 endmodule
+
+`endif /* _S_AXI4L_WR_CHANNEL_V_ */
