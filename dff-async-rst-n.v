@@ -1,3 +1,6 @@
+`ifndef _DFF_ASYNC_RST_N_
+`define _DFF_ASYNC_RST_N_
+
 module dff_async_rst_n #(parameter WIDTH = 32,
                          parameter RESET = {WIDTH{1'b0}})
 
@@ -14,3 +17,5 @@ module dff_async_rst_n #(parameter WIDTH = 32,
       q <= d;
 
 endmodule
+
+`endif // _DFF_ASYNC_RST_N_
